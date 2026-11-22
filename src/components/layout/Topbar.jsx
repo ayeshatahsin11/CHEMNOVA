@@ -1,10 +1,13 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, Sun, Moon } from 'lucide-react'
 import useTheme from '../../hooks/useTheme'
+import useAuth from '../../hooks/useAuth'
 import { navItems } from '../../lib/navigation'
+import { getInitials } from '../../lib/user'
 
 export default function Topbar({ onMenu }) {
   const { theme, toggle } = useTheme()
+  const { user } = useAuth()
   const { pathname } = useLocation()
   const current = navItems.find((i) => pathname.startsWith(i.to))
 
@@ -33,15 +36,14 @@ export default function Topbar({ onMenu }) {
           {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
         </button>
 
-        {/* TEMPORARY: static guest chip. Replaced by the real user once auth is built. */}
         <Link
           to="/settings"
           className="flex items-center gap-2 rounded-full border border-border bg-surface/60 py-1 pr-3 pl-1 transition hover:border-accent/50"
         >
           <span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 text-sm font-bold text-[#04121c]">
-            G
+            {getInitials(user.name)}
           </span>
-          <span className="hidden text-sm sm:block">Guest</span>
+          <span className="hidden text-sm sm:block">{user.name.split(' ')[0]}</span>
         </Link>
       </div>
     </header>

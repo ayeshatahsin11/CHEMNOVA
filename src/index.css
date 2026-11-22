@@ -231,3 +231,18 @@ body {
   background: rgba(255, 255, 255, 0.95);
   border-color: rgba(15, 23, 42, 0.4);
 }
+/* ---------- Native colour scheme + autofill fix ---------- */
+:root { color-scheme: dark; }
+[data-theme="light"] { color-scheme: light; }
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-2) inset;
+  box-shadow: 0 0 0 1000px var(--surface-2) inset;
+  transition: background-color 9999s ease-in-out 0s;
+  border-radius: inherit;
+}

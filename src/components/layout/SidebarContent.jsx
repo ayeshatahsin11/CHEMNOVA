@@ -1,9 +1,20 @@
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FlaskConical, X, ArrowRight } from 'lucide-react'
+import { FlaskConical, X, ArrowRight, LogOut } from 'lucide-react'
 import { navItems } from '../../lib/navigation'
+import { getInitials, roleLabel } from '../../lib/user'
+import useAuth from '../../hooks/useAuth'
 
 export default function SidebarContent({ layoutKey, onNavigate, onClose }) {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    onNavigate?.()
+    logout()
+    navigate('/')
+  }
+
   return (
     <div className="flex h-full flex-col p-4">
       <div className="flex items-center justify-between px-2 pt-1 pb-6">
@@ -61,25 +72,39 @@ export default function SidebarContent({ layoutKey, onNavigate, onClose }) {
         ))}
       </nav>
 
-      {/* TEMPORARY: static guest card. Replaced by the real user once auth is built. */}
       <div className="mt-4 rounded-xl border border-border bg-surface-2/50 p-3">
         <div className="flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 text-sm font-bold text-[#04121c]">
-            G
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 text-sm font-bold text-[#04121c]">
+            {getInitials(user.name)}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">Guest Explorer</p>
-            <p className="text-xs text-muted">Limited access</p>
+            <p className="truncate text-sm font-semibold">{user.name}</p>
+            <p className="truncate text-xs text-muted">
+              {roleLabel(user.role)} · {user.level}
+            </p>
           </div>
         </div>
-        <Link
-          to="/register"
-          onClick={onNavigate}
-          className="group mt-3 flex items-center justify-between rounded-lg bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
+
+        {user.isGuest && (
+          <Link
+            to="/register"
+            onClick={onNavigate}
+            className="group mt-3 flex items-center justify-between rounded-lg bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:bg-accent/20"
+          >
+            Create a free account
+            <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+          </Link>
+        )}
+
+        <button
+          onClick={handleLogout}
+          className={`flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted transition hover:border-red-500/40 hover:text-red-500 ${
+            user.isGuest ? 'mt-2' : 'mt-3'
+          }`}
         >
-          Create a free account
-          <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
-        </Link>
+          {user.isGuest ? 'Exit guest mode' : 'Log out'}
+          <LogOut size={14} />
+        </button>
       </div>
     </div>
   )
