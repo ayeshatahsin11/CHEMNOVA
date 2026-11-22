@@ -1,77 +1,63 @@
-/*
- * TEMPORARY STUB, no backend yet.
- * Accounts live in this browser's localStorage and passwords are NOT stored
- * or checked. In Phase 3 these three functions become real axios calls
- * (POST /auth/register, /auth/login, /auth/guest) and nothing else changes.
- */
-const SESSION_KEY = 'chemnova-session'
-const USERS_KEY = 'chemnova-stub-users'
+import api, { TOKEN_KEY, getErrorMessage } from './client'
 
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const USER_KEY = 'chemnova-session'
 
-function readUsers() {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY)) ?? []
-  } catch {
-    return []
-  }
+function toError(err) {
+  // Prefer the first specific validation message if the server sent any
+  const first = err.response?.data?.details?.[0]?.message
+  return new Error(first || getErrorMessage(err))
 }
 
-function saveSession(user) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify(user))
+function saveUser(user) {
+  localStorage.setItem(USER_KEY, JSON.stringify(user))
   return user
 }
 
+function saveSession({ token, user }) {
+  localStorage.setItem(TOKEN_KEY, token)
+  return saveUser(user)
+}
+
+export const getToken = () => localStorage.getItem(TOKEN_KEY)
+
+// A saved user only counts if a token exists too (this also drops leftovers from the old stub)
 export function getStoredUser() {
+  if (!getToken()) return null
   try {
-    return JSON.parse(localStorage.getItem(SESSION_KEY))
+    return JSON.parse(localStorage.getItem(USER_KEY))
   } catch {
     return null
   }
 }
 
 export function clearSession() {
-  localStorage.removeItem(SESSION_KEY)
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USER_KEY)
+  localStorage.removeItem('chemnova-stub-users')
 }
 
-export async function registerRequest({ name, email, level }) {
-  await wait(800)
-  const users = readUsers()
-  const normalized = email.toLowerCase()
-
-  if (users.some((u) => u.email === normalized)) {
-    throw new Error('An account with this email already exists')
+async function authPost(path, body) {
+  try {
+    const { data } = await api.post(path, body)
+    return saveSession(data)
+  } catch (err) {
+    throw toError(err)
   }
-
-  const user = {
-    id: crypto.randomUUID(),
-    name,
-    email: normalized,
-    level,
-    role: 'student',
-    isGuest: false,
-  }
-  localStorage.setItem(USERS_KEY, JSON.stringify([...users, user]))
-  return saveSession(user)
 }
 
-export async function loginRequest({ email }) {
-  await wait(700)
-  const user = readUsers().find((u) => u.email === email.toLowerCase())
-  if (!user) {
-    throw new Error('No account found with this email. Try registering first.')
-  }
-  return saveSession(user)
-}
+export const registerRequest = ({ name, email, password, level }) =>
+  authPost('/auth/register', { name, email, password, level })
 
-export async function guestRequest() {
-  await wait(500)
-  return saveSession({
-    id: 'guest',
-    name: 'Guest Explorer',
-    email: '',
-    level: 'Undergraduate',
-    role: 'guest',
-    isGuest: true,
-  })
+export const loginRequest = ({ email, password }) =>
+  authPost('/auth/login', { email, password })
+
+export const guestRequest = () => authPost('/auth/guest')
+
+export async function meRequest() {
+  try {
+    const { data } = await api.get('/auth/me')
+    return saveUser(data.user)
+  } catch (err) {
+    throw toError(err)
+  }
 }
