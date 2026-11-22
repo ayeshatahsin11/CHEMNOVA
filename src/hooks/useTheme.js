@@ -1,16 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useContext } from 'react'
+import { ThemeContext } from '../context/themeContext'
 
 export default function useTheme() {
-  const [theme, setTheme] = useState(
-    () => localStorage.getItem('chemnova-theme') || 'dark'
-  )
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('chemnova-theme', theme)
-  }, [theme])
-
-  const toggle = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
-
-  return { theme, toggle }
+  const ctx = useContext(ThemeContext)
+  if (!ctx) throw new Error('useTheme must be used inside <ThemeProvider>')
+  return ctx
 }

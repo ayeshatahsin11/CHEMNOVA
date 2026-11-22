@@ -1,26 +1,33 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import useTheme from '../../hooks/useTheme'
 
 export const scenes = [
   {
     id: 'organic',
     name: 'Organic',
     caption: 'From benzene rings to reaction mechanisms, learn organic chemistry the way it clicks.',
-    background:
-      'radial-gradient(900px 520px at 15% 20%, rgba(34,211,238,0.32), transparent 60%), radial-gradient(800px 500px at 90% 85%, rgba(16,185,129,0.22), transparent 60%), #04121c',
+    background: {
+      dark: 'radial-gradient(900px 520px at 15% 20%, rgba(34,211,238,0.32), transparent 60%), radial-gradient(800px 500px at 90% 85%, rgba(16,185,129,0.22), transparent 60%), #04121c',
+      light: 'radial-gradient(900px 520px at 15% 20%, rgba(34,211,238,0.35), transparent 60%), radial-gradient(800px 500px at 90% 85%, rgba(16,185,129,0.25), transparent 60%), #e9f8fb',
+    },
   },
   {
     id: 'reactions',
     name: 'Reactions',
     caption: 'Every question is a reaction. Mix concepts, test ideas and watch understanding bubble up.',
-    background:
-      'radial-gradient(900px 520px at 85% 15%, rgba(139,92,246,0.38), transparent 60%), radial-gradient(800px 500px at 10% 90%, rgba(244,114,182,0.25), transparent 60%), #0e0820',
+    background: {
+      dark: 'radial-gradient(900px 520px at 85% 15%, rgba(139,92,246,0.38), transparent 60%), radial-gradient(800px 500px at 10% 90%, rgba(244,114,182,0.25), transparent 60%), #0e0820',
+      light: 'radial-gradient(900px 520px at 85% 15%, rgba(139,92,246,0.3), transparent 60%), radial-gradient(800px 500px at 10% 90%, rgba(244,114,182,0.28), transparent 60%), #f4effd',
+    },
   },
   {
     id: 'atomic',
     name: 'Atomic',
     caption: 'Go deeper than the textbook, from electron shells to your own research ideas.',
-    background:
-      'radial-gradient(900px 520px at 80% 30%, rgba(59,130,246,0.35), transparent 60%), radial-gradient(700px 450px at 15% 85%, rgba(251,191,36,0.18), transparent 60%), #060b1e',
+    background: {
+      dark: 'radial-gradient(900px 520px at 80% 30%, rgba(59,130,246,0.35), transparent 60%), radial-gradient(700px 450px at 15% 85%, rgba(251,191,36,0.18), transparent 60%), #060b1e',
+      light: 'radial-gradient(900px 520px at 80% 30%, rgba(59,130,246,0.3), transparent 60%), radial-gradient(700px 450px at 15% 85%, rgba(251,191,36,0.3), transparent 60%), #eef3fd',
+    },
   },
 ]
 
@@ -68,46 +75,21 @@ const rings = [
   { size: 80, top: '36%', left: '44%', anim: 'animate-float-slow', opacity: 0.18 },
 ]
 
-function OrganicScene() {
+function OrganicScene({ light }) {
+  const color = light ? '#0891b2' : '#22d3ee'
   return (
     <>
       {rings.map((r, i) => (
         <Benzene
           key={i}
           size={r.size}
+          color={color}
           className={`absolute ${r.anim}`}
-          style={{ top: r.top, left: r.left, right: r.right, opacity: r.opacity }}
-        />
-      ))}
-    </>
-  )
-}
-
-/* ---------- Scene 2: rising bubbles ---------- */
-const bubbles = Array.from({ length: 22 }, (_, i) => ({
-  left: `${(i * 47) % 100}%`,
-  size: 10 + ((i * 13) % 34),
-  delay: `${-((i * 1.7) % 12)}s`,
-  duration: `${9 + (i % 6) * 2}s`,
-  color: i % 2 === 0 ? 'rgba(196,181,253,0.55)' : 'rgba(244,114,182,0.5)',
-}))
-
-function ReactionScene() {
-  return (
-    <>
-      {bubbles.map((b, i) => (
-        <span
-          key={i}
-          className="animate-rise absolute rounded-full"
           style={{
-            left: b.left,
-            bottom: '-60px',
-            width: b.size,
-            height: b.size,
-            border: `1px solid ${b.color}`,
-            background: `radial-gradient(circle at 30% 30%, ${b.color}, transparent 70%)`,
-            animationDuration: b.duration,
-            animationDelay: b.delay,
+            top: r.top,
+            left: r.left,
+            right: r.right,
+            opacity: light ? r.opacity + 0.15 : r.opacity,
           }}
         />
       ))}
@@ -115,21 +97,65 @@ function ReactionScene() {
   )
 }
 
+/* ---------- Scene 2: rising bubbles ---------- */
+const bubbleColors = {
+  dark: ['rgba(196,181,253,0.55)', 'rgba(244,114,182,0.5)'],
+  light: ['rgba(124,58,237,0.45)', 'rgba(219,39,119,0.4)'],
+}
+
+const bubbles = Array.from({ length: 22 }, (_, i) => ({
+  left: `${(i * 47) % 100}%`,
+  size: 10 + ((i * 13) % 34),
+  delay: `${-((i * 1.7) % 12)}s`,
+  duration: `${9 + (i % 6) * 2}s`,
+}))
+
+function ReactionScene({ light }) {
+  const palette = light ? bubbleColors.light : bubbleColors.dark
+  return (
+    <>
+      {bubbles.map((b, i) => {
+        const color = palette[i % 2]
+        return (
+          <span
+            key={i}
+            className="animate-rise absolute rounded-full"
+            style={{
+              left: b.left,
+              bottom: '-60px',
+              width: b.size,
+              height: b.size,
+              border: `1px solid ${color}`,
+              background: `radial-gradient(circle at 30% 30%, ${color}, transparent 70%)`,
+              animationDuration: b.duration,
+              animationDelay: b.delay,
+            }}
+          />
+        )
+      })}
+    </>
+  )
+}
+
 /* ---------- Scene 3: atom with orbiting electrons ---------- */
-function AtomicScene() {
+function AtomicScene({ light }) {
+  const nucleus = light ? '#f59e0b' : '#fbbf24'
+  const orbit = light ? 'rgba(37,99,235,0.4)' : 'rgba(147,197,253,0.45)'
+  const electron = light ? '#2563eb' : '#93c5fd'
+
   return (
     <svg
       viewBox="-200 -200 400 400"
       className="absolute top-1/2 right-[-25%] h-[110%] -translate-y-1/2 opacity-70 md:right-[2%]"
       fill="none"
     >
-      <circle r="34" fill="#fbbf24" opacity="0.12" />
-      <circle r="18" fill="#fbbf24" opacity="0.25" />
-      <circle r="9" fill="#fbbf24" />
+      <circle r="34" fill={nucleus} opacity="0.12" />
+      <circle r="18" fill={nucleus} opacity="0.25" />
+      <circle r="9" fill={nucleus} />
       {[0, 60, 120].map((deg, i) => (
         <g key={deg} transform={`rotate(${deg})`}>
-          <ellipse rx="160" ry="62" stroke="rgba(147,197,253,0.45)" strokeWidth="1.2" />
-          <circle r="6" fill="#93c5fd">
+          <ellipse rx="160" ry="62" stroke={orbit} strokeWidth="1.2" />
+          <circle r="6" fill={electron}>
             <animateMotion
               dur={`${6 + i * 2}s`}
               repeatCount="indefinite"
@@ -152,6 +178,8 @@ const chips = [
 ]
 
 export default function HeroBackground({ index }) {
+  const { theme } = useTheme()
+  const light = theme === 'light'
   const scene = scenes[index]
 
   return (
@@ -160,15 +188,15 @@ export default function HeroBackground({ index }) {
         <motion.div
           key={scene.id}
           className="absolute inset-0"
-          style={{ background: scene.background }}
+          style={{ background: scene.background[theme] }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 1.2 }}
         >
-          {scene.id === 'organic' && <OrganicScene />}
-          {scene.id === 'reactions' && <ReactionScene />}
-          {scene.id === 'atomic' && <AtomicScene />}
+          {scene.id === 'organic' && <OrganicScene light={light} />}
+          {scene.id === 'reactions' && <ReactionScene light={light} />}
+          {scene.id === 'atomic' && <AtomicScene light={light} />}
         </motion.div>
       </AnimatePresence>
 
@@ -177,7 +205,7 @@ export default function HeroBackground({ index }) {
       {chips.map((c) => (
         <span
           key={c.t}
-          className="animate-float-slow absolute hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 font-mono text-xs text-white/60 backdrop-blur-sm md:block"
+          className="animate-float-slow absolute hidden rounded-full border border-border bg-surface/50 px-3 py-1 font-mono text-xs text-muted backdrop-blur-sm md:block"
           style={{ top: c.top, left: c.left }}
         >
           {c.t}
