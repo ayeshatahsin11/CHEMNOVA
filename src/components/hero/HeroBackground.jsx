@@ -25,7 +25,7 @@ export const scenes = [
 ]
 
 /* ---------- Scene 1: floating benzene rings ---------- */
-function Benzene({ size, color = '#22d3ee', className = '', style }) {
+export function Benzene({ size, color = '#22d3ee', className = '', style }) {
   const r = 40
   const c = 50
   const pts = Array.from({ length: 6 }, (_, i) => {

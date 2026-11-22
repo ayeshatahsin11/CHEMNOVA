@@ -8,7 +8,7 @@ export default function SpotlightCard({ children, className = '' }) {
   return (
     <div
       onMouseMove={handleMove}
-      className={`group spotlight rounded-2xl border border-border bg-surface/70 ${className}`}
+      className={`group spotlight rounded-2xl border border-border bg-surface/60 backdrop-blur-md ${className}`}
     >
       <div className="relative z-10">{children}</div>
     </div>
