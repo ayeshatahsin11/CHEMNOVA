@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #070b16;
+  --surface: #0f1629;
+  --surface-2: #17203a;
+  --border: rgba(148, 163, 255, 0.16);
+  --text: #e8edff;
+  --muted: #8f9cc4;
+  --accent: #22d3ee;
+  --secondary: #8b5cf6;
+}
+
+[data-theme="light"] {
+  --bg: #f4f7fd;
+  --surface: #ffffff;
+  --surface-2: #eaf0fb;
+  --border: rgba(80, 100, 160, 0.18);
+  --text: #0f172a;
+  --muted: #55638a;
+  --accent: #0891b2;
+  --secondary: #7c3aed;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-content: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-secondary: var(--secondary);
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* ---------- Keyframes ---------- */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-18px); }
+}
+@keyframes rise {
+  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  15% { opacity: 0.8; }
+  100% { transform: translateY(-115vh) scale(1.1); opacity: 0; }
+}
+@keyframes shimmer {
+  to { background-position: 200% center; }
+}
+@keyframes drift-spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-slow { animation: float 12s ease-in-out infinite; }
+.animate-spin-slow { animation: drift-spin 50s linear infinite; }
+.animate-rise { animation: rise 10s linear infinite; }
+
+/* ---------- Helpers ---------- */
+.text-gradient {
+  background-image: linear-gradient(100deg, #22d3ee, #818cf8 45%, #f472b6 75%, #22d3ee);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 6s linear infinite;
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+}
+
+.btn-glow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.8rem 1.4rem;
+  font-weight: 600;
+  color: #04121c;
+  background-image: linear-gradient(110deg, #22d3ee, #818cf8 55%, #c084fc);
+  background-size: 200% auto;
+  box-shadow: 0 8px 30px -8px rgba(34, 211, 238, 0.6);
+  transition: background-position 0.5s, box-shadow 0.3s, transform 0.3s;
+}
+.btn-glow:hover {
+  background-position: 100% center;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px -8px rgba(139, 92, 246, 0.7);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.8rem 1.4rem;
+  font-weight: 600;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(8px);
+  transition: background 0.3s, transform 0.3s, border-color 0.3s;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Card with a mouse-following spotlight */
+.spotlight {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.35s, box-shadow 0.35s;
+}
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(34, 211, 238, 0.18), transparent 45%);
+  opacity: 0;
+  transition: opacity 0.35s;
+  pointer-events: none;
+}
+.spotlight:hover {
+  transform: translateY(-6px);
+  border-color: rgba(34, 211, 238, 0.5);
+  box-shadow: 0 24px 50px -22px rgba(34, 211, 238, 0.4);
+}
+.spotlight:hover::before { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
