@@ -9,6 +9,7 @@ import AppLayout from './components/layout/AppLayout'
 import AmbientBackground from './components/ui/AmbientBackground'
 import ModulePlaceholder from './components/ui/ModulePlaceholder'
 import { navItems } from './lib/navigation'
+import Dashboard from './pages/Dashboard'
 
 function NotFound() {
   return (
@@ -38,9 +39,12 @@ export default function App() {
 
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
-                {navItems.map((item) => (
-                  <Route key={item.to} path={item.to} element={<ModulePlaceholder item={item} />} />
-                ))}
+                              <Route path="/dashboard" element={<Dashboard />} />
+                {navItems
+                  .filter((item) => item.to !== '/dashboard')
+                  .map((item) => (
+                    <Route key={item.to} path={item.to} element={<ModulePlaceholder item={item} />} />
+                  ))}
               </Route>
             </Route>
 
