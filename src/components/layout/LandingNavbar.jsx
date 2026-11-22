@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom'
 import { FlaskConical, Sun, Moon } from 'lucide-react'
 import useTheme from '../../hooks/useTheme'
+import useAuth from '../../hooks/useAuth'
 
 export default function LandingNavbar() {
   const { theme, toggle } = useTheme()
+  const { user } = useAuth()
+  const realUser = user && !user.isGuest
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4">
@@ -26,15 +29,35 @@ export default function LandingNavbar() {
           >
             {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
           </button>
-          <Link to="/login" className="hidden text-sm text-muted transition hover:text-content sm:block">
-            Log in
-          </Link>
-          <Link
-            to="/register"
-            className="rounded-lg bg-gradient-to-r from-cyan-400 to-violet-400 px-4 py-2 text-sm font-semibold text-[#04121c] transition hover:opacity-90"
-          >
-            Get started
-          </Link>
+
+          {realUser ? (
+            <Link
+              to="/dashboard"
+              className="rounded-lg bg-gradient-to-r from-cyan-400 to-violet-400 px-4 py-2 text-sm font-semibold text-[#04121c] transition hover:opacity-90"
+            >
+              Open dashboard
+            </Link>
+          ) : (
+            <>
+              {user?.isGuest && (
+                <Link
+                  to="/dashboard"
+                  className="rounded-lg border border-border px-3 py-2 text-sm text-content transition hover:border-accent/50"
+                >
+                  Back to app
+                </Link>
+              )}
+              <Link to="/login" className="hidden text-sm text-muted transition hover:text-content sm:block">
+                Log in
+              </Link>
+              <Link
+                to="/register"
+                className="rounded-lg bg-gradient-to-r from-cyan-400 to-violet-400 px-4 py-2 text-sm font-semibold text-[#04121c] transition hover:opacity-90"
+              >
+                Get started
+              </Link>
+            </>
+          )}
         </div>
       </nav>
     </header>

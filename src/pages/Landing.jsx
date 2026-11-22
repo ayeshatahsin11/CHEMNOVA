@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import LandingActions from '../components/landing/LandingActions'
+import useAuth from '../hooks/useAuth'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Mic, ClipboardCheck, FlaskConical, Bot, Gamepad2, TrendingUp,
@@ -93,6 +94,8 @@ const vivaPoints = [
 
 export default function Landing() {
   const [scene, setScene] = useState(0)
+    const { user } = useAuth()
+  const realUser = user && !user.isGuest
 
   useEffect(() => {
     const id = setInterval(() => setScene((s) => (s + 1) % scenes.length), 7000)
@@ -152,12 +155,7 @@ export default function Landing() {
               transition={{ duration: 0.7, delay: 0.25 }}
               className="mt-8 flex flex-wrap gap-4"
             >
-              <Link to="/register" className="btn-glow">
-                Get started free <ArrowRight size={18} />
-              </Link>
-              <Link to="/login" className="btn-ghost">
-                Explore as guest
-              </Link>
+                         <LandingActions variant="hero" />
             </motion.div>
 
             <div className="mt-14 flex flex-wrap items-center justify-between gap-6">
@@ -333,16 +331,15 @@ export default function Landing() {
                 <br />
                 <span className="text-gradient">experiment in learning?</span>
               </h2>
-              <p className="relative mx-auto mt-4 max-w-xl text-muted">
-                Create a free account, or jump in as a guest and try the viva, the quizzes and the Fun Zone.
+                          <p className="relative mx-auto mt-4 max-w-xl text-muted">
+                {realUser
+                  ? `Welcome back, ${user.name.split(' ')[0]}. Pick up where you left off.`
+                  : user?.isGuest
+                    ? 'You are exploring as a guest. Create a free account to save your progress.'
+                    : 'Create a free account, or jump in as a guest and try the viva, the quizzes and the Fun Zone.'}
               </p>
-              <div className="relative mt-8 flex flex-wrap justify-center gap-4">
-                <Link to="/register" className="btn-glow">
-                  Create free account <ArrowRight size={18} />
-                </Link>
-                <Link to="/login" className="btn-outline">
-                  Continue as guest
-                </Link>
+              <div className="relative mt-8 flex flex-wrap justify-center gap-4 text-center">
+                <LandingActions variant="cta" />
               </div>
             </div>
           </motion.div>
