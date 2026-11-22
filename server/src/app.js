@@ -4,13 +4,20 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import mongoose from 'mongoose'
 import { env } from './config/env.js'
+import { apiLimiter } from './middleware/rateLimit.js'
+import { notFound, errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
+
+// Render runs behind a proxy, and rate limiting needs the real client IP
+if (env.nodeEnv === 'production') app.set('trust proxy', 1)
 
 app.use(helmet())
 app.use(cors({ origin: env.clientUrl, credentials: true }))
 app.use(express.json({ limit: '1mb' }))
 if (env.nodeEnv !== 'production') app.use(morgan('dev'))
+
+app.use('/api', apiLimiter)
 
 app.get('/api/health', (req, res) => {
   res.json({
@@ -20,5 +27,10 @@ app.get('/api/health', (req, res) => {
     time: new Date().toISOString(),
   })
 })
+
+// Feature routes get mounted here in the next steps
+
+app.use(notFound)
+app.use(errorHandler)
 
 export default app
