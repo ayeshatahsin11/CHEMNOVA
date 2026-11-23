@@ -3,7 +3,7 @@ import { env } from '../config/env.js'
 import { connectDB } from '../config/db.js'
 import User from '../models/User.js'
 
-const BASE = `http://localhost:${env.port}/api`
+const BASE = `http://127.0.0.1:${env.port}/api`
 
 async function call(method, path, body, token) {
   const res = await fetch(`${BASE}${path}`, {
