@@ -1,15 +1,19 @@
+import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FlaskConical, X, ArrowRight, LogOut } from 'lucide-react'
 import { navItems } from '../../lib/navigation'
 import { getInitials, roleLabel } from '../../lib/user'
 import useAuth from '../../hooks/useAuth'
+import ConfirmModal from '../ui/ConfirmModal'
 
 export default function SidebarContent({ layoutKey, onNavigate, onClose }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [confirming, setConfirming] = useState(false)
 
-  const handleLogout = () => {
+  const confirmLogout = () => {
+    setConfirming(false)
     onNavigate?.()
     logout()
     navigate('/')
@@ -97,7 +101,7 @@ export default function SidebarContent({ layoutKey, onNavigate, onClose }) {
         )}
 
         <button
-          onClick={handleLogout}
+          onClick={() => setConfirming(true)}
           className={`flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted transition hover:border-red-500/40 hover:text-red-500 ${
             user.isGuest ? 'mt-2' : 'mt-3'
           }`}
@@ -106,6 +110,22 @@ export default function SidebarContent({ layoutKey, onNavigate, onClose }) {
           <LogOut size={14} />
         </button>
       </div>
+
+      <ConfirmModal
+        open={confirming}
+        tone={user.isGuest ? 'danger' : 'default'}
+        icon={LogOut}
+        title={user.isGuest ? 'Exit guest mode?' : 'Log out of ChemNova?'}
+        message={
+          user.isGuest
+            ? 'Guest sessions are not saved, so your vivas and progress will be lost when you leave. Create a free account to keep them.'
+            : 'You will need to log in again to get back to your dashboard and saved progress.'
+        }
+        confirmLabel={user.isGuest ? 'Exit guest mode' : 'Log out'}
+        cancelLabel={user.isGuest ? 'Stay' : 'Stay logged in'}
+        onConfirm={confirmLogout}
+        onCancel={() => setConfirming(false)}
+      />
     </div>
   )
 }

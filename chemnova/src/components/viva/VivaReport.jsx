@@ -46,7 +46,7 @@ export default function VivaReport({ session, questions }) {
 
             <div className="mt-4 flex flex-wrap justify-center gap-2 md:justify-start">
               <span className={chip}>
-                {r.answered} of {session.totalQuestions} answered
+                              {r.answered - r.skipped} of {session.totalQuestions} answered
               </span>
               {r.skipped > 0 && <span className={chip}>{r.skipped} skipped</span>}
               <span className={`${chip} flex items-center gap-1`}>

@@ -1,9 +1,15 @@
-import { ArrowRight, Flag, Loader2, Lightbulb, AlertTriangle } from 'lucide-react'
+import { ArrowRight, Flag, Loader2, Lightbulb, AlertTriangle, SkipForward } from 'lucide-react'
 import ScoreBars from './ScoreBars'
 import ThinkingIndicator from './ThinkingIndicator'
 import { panelClass, scoreClass } from '../../lib/viva'
 
-export default function FeedbackCard({ question, done, finishing, onNext, onFinish }) {
+const icons = { next: ArrowRight, review: SkipForward, finish: Flag }
+
+// action: 'next' | 'review' | 'finish'
+export default function FeedbackCard({ question, action, label, finishing, onAction }) {
+  const Icon = icons[action]
+  const building = finishing && action === 'finish'
+
   return (
     <div className={panelClass}>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -13,9 +19,7 @@ export default function FeedbackCard({ question, done, finishing, onNext, onFini
           </span>
           <div>
             <h3 className="font-semibold">Examiner feedback</h3>
-            <p className="text-xs text-muted">
-              {question.skipped ? 'You skipped this question' : `Question ${question.order}`}
-            </p>
+            <p className="text-xs text-muted">Question {question.order}</p>
           </div>
         </div>
         <span className={`rounded-full px-3 py-1 font-mono text-sm font-semibold ${scoreClass(question.overall)}`}>
@@ -40,34 +44,28 @@ export default function FeedbackCard({ question, done, finishing, onNext, onFini
         <ScoreBars scores={question.scores} max={10} />
       </div>
 
-      {finishing && (
+      {building && (
         <div className="mt-6">
           <ThinkingIndicator text="Writing your report..." />
         </div>
       )}
 
       <div className="mt-6 flex flex-wrap gap-3">
-        {done ? (
-          <button
-            onClick={onFinish}
-            disabled={finishing}
-            className="btn-glow disabled:pointer-events-none disabled:opacity-60"
-          >
-            {finishing ? (
-              <>
-                <Loader2 size={18} className="animate-spin" /> Building report...
-              </>
-            ) : (
-              <>
-                <Flag size={18} /> Finish and see my report
-              </>
-            )}
-          </button>
-        ) : (
-          <button onClick={onNext} className="btn-glow">
-            Next question <ArrowRight size={18} />
-          </button>
-        )}
+        <button
+          onClick={onAction}
+          disabled={finishing}
+          className="btn-glow disabled:pointer-events-none disabled:opacity-60"
+        >
+          {building ? (
+            <>
+              <Loader2 size={18} className="animate-spin" /> Building report...
+            </>
+          ) : (
+            <>
+              {label} <Icon size={18} />
+            </>
+          )}
+        </button>
       </div>
     </div>
   )
