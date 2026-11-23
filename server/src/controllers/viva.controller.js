@@ -6,6 +6,7 @@ import { LEVELS, GUEST_LIMITS } from '../config/roles.js'
 import { SUBJECTS, DIFFICULTIES, INPUT_MODES, VIVA_MODES, VIVA_LIMITS } from '../config/viva.js'
 import {
   generateOpeningQuestion,
+  generateNextAfterSkip,
   evaluateAnswer,
   writeReportNarrative,
 } from '../services/viva/vivaService.js'
@@ -13,10 +14,30 @@ import { questionOverall, computeStats, fallbackNarrative } from '../services/vi
 
 const expiryFor = (user) => (user.isGuest && user.expiresAt ? { expiresAt: user.expiresAt } : {})
 
+const ZERO_SCORES = { accuracy: 0, understanding: 0, explanation: 0, reasoning: 0 }
+const SKIPPED_FEEDBACK = 'You skipped this question.'
+
 async function findOwnedSession(req) {
   const session = await VivaSession.findOne({ _id: req.params.id, user: req.user._id })
   if (!session) throw new ApiError(404, 'Viva session not found')
   return session
+}
+
+async function createNextQuestion(session, user, order, data) {
+  try {
+    return await VivaQuestion.create({
+      session: session._id,
+      user: user._id,
+      order,
+      question: data.question,
+      topicTag: data.topicTag,
+      isFollowUp: Boolean(data.isFollowUp),
+      ...expiryFor(user),
+    })
+  } catch (err) {
+    if (err.code === 11000) throw new ApiError(409, 'That answer was already submitted')
+    throw err
+  }
 }
 
 // GET /api/viva/options: everything the setup form needs, so the frontend never duplicates these lists
@@ -121,7 +142,11 @@ export const getSession = asyncHandler(async (req, res) => {
   })
 })
 
-// POST /api/viva/sessions/:id/answer: evaluate an answer and get the next question
+// POST /api/viva/sessions/:id/answer
+//   { skip: true }   -> marks the question as skipped (it stays open so the student can come back)
+//                       and creates the next question. No evaluation, so no scoring.
+//   { answer: '...' } -> evaluates the answer. If this was the newest question, it also creates the next one.
+//                       Answering an earlier, skipped question only evaluates it.
 export const answerQuestion = asyncHandler(async (req, res) => {
   const { questionId, answer, skip } = req.validated.body
   const session = await findOwnedSession(req)
@@ -134,16 +159,52 @@ export const answerQuestion = asyncHandler(async (req, res) => {
   if (current.answeredAt) throw new ApiError(409, 'That question was already answered')
 
   const answered = questions.filter((q) => q.answeredAt)
-  const isLast = answered.length + 1 >= session.totalQuestions
+  const asked = questions.map((q) => q.question)
 
+  // Only the newest question can lead to a new one, and only while the exam still has questions to create
+  const needsNext = current.order === questions.length && questions.length < session.totalQuestions
+
+  // ---- skip ----
+  if (skip) {
+    if (current.skipped) throw new ApiError(409, 'That question was already skipped')
+
+    // Generate the next question first, so a failed AI call changes nothing and the student can simply retry
+    const next = needsNext
+      ? await generateNextAfterSkip({
+          config: session.toObject(),
+          answered,
+          asked,
+          number: current.order + 1,
+        })
+      : null
+
+    // The filter makes a double submit safe: only one request can win
+    const skippedQuestion = await VivaQuestion.findOneAndUpdate(
+      { _id: current._id, answeredAt: null, skipped: false },
+      { $set: { skipped: true } },
+      { new: true },
+    )
+    if (!skippedQuestion) throw new ApiError(409, 'That question was already skipped')
+
+    const nextQuestion = next ? await createNextQuestion(session, req.user, current.order + 1, next) : null
+
+    return res.json({
+      success: true,
+      skippedQuestion,
+      next: nextQuestion,
+      progress: { answered: answered.length, total: session.totalQuestions },
+    })
+  }
+
+  // ---- answer ----
   const { evaluation, next } = await evaluateAnswer({
     config: session.toObject(),
     answered,
-    asked: questions.map((q) => q.question),
+    asked,
     current,
     answer,
-    skipped: skip,
-    isLast,
+    skipped: false,
+    isLast: !needsNext,
   })
 
   const scores = {
@@ -153,13 +214,12 @@ export const answerQuestion = asyncHandler(async (req, res) => {
     reasoning: evaluation.reasoning,
   }
 
-  // The answeredAt: null filter makes a double submit safe: only one request can win
   const evaluated = await VivaQuestion.findOneAndUpdate(
     { _id: current._id, answeredAt: null },
     {
       $set: {
-        answer: skip ? '' : answer,
-        skipped: skip,
+        answer,
+        skipped: false, // answering a question that was skipped earlier clears the skip
         scores,
         overall: questionOverall(scores),
         feedback: evaluation.feedback,
@@ -171,29 +231,12 @@ export const answerQuestion = asyncHandler(async (req, res) => {
   )
   if (!evaluated) throw new ApiError(409, 'That question was already answered')
 
-  let nextQuestion = null
-  if (next) {
-    try {
-      nextQuestion = await VivaQuestion.create({
-        session: session._id,
-        user: req.user._id,
-        order: current.order + 1,
-        question: next.question,
-        topicTag: next.topicTag,
-        isFollowUp: Boolean(next.isFollowUp),
-        ...expiryFor(req.user),
-      })
-    } catch (err) {
-      if (err.code === 11000) throw new ApiError(409, 'That answer was already submitted')
-      throw err
-    }
-  }
+  const nextQuestion = next ? await createNextQuestion(session, req.user, current.order + 1, next) : null
 
   res.json({
     success: true,
     evaluated,
     next: nextQuestion,
-    done: isLast,
     progress: { answered: answered.length + 1, total: session.totalQuestions },
   })
 })
@@ -203,15 +246,33 @@ export const finishSession = asyncHandler(async (req, res) => {
   const session = await findOwnedSession(req)
   if (session.status === 'completed') return res.json({ success: true, session })
 
-  const questions = await VivaQuestion.find({
-    session: session._id,
-    answeredAt: { $ne: null },
-  }).sort({ order: 1 })
+  const all = await VivaQuestion.find({ session: session._id }).sort({ order: 1 })
 
-  if (!questions.length) throw new ApiError(400, 'Answer at least one question before finishing')
+  const realAnswers = all.filter((q) => q.answeredAt && !q.skipped).length
+  if (!realAnswers) throw new ApiError(400, 'Answer at least one question before finishing')
 
-  const stats = computeStats(questions)
-  const log = questions.map((q) => ({
+  // Skipped questions the student never came back to count as 0.
+  // They are built in memory here and saved only after the report succeeds.
+  const counted = all
+    .filter((q) => q.answeredAt || q.skipped)
+    .map((q) =>
+      q.answeredAt
+        ? q
+        : {
+            order: q.order,
+            question: q.question,
+            topicTag: q.topicTag,
+            skipped: true,
+            answer: '',
+            scores: ZERO_SCORES,
+            overall: 0,
+            feedback: SKIPPED_FEEDBACK,
+            misconception: null,
+          },
+    )
+
+  const stats = computeStats(counted)
+  const log = counted.map((q) => ({
     n: q.order,
     question: q.question,
     answer: q.skipped ? '(skipped)' : String(q.answer || '').slice(0, 300),
@@ -226,7 +287,7 @@ export const finishSession = asyncHandler(async (req, res) => {
     narrative = await writeReportNarrative({ config: session.toObject(), stats, log })
   } catch (err) {
     console.warn('[viva] report text from AI failed, using the automatic version:', err.message)
-    narrative = { ...fallbackNarrative(stats, questions), source: 'auto' }
+    narrative = { ...fallbackNarrative(stats, counted), source: 'auto' }
   }
 
   const completedAt = new Date()
@@ -243,7 +304,11 @@ export const finishSession = asyncHandler(async (req, res) => {
   session.completedAt = completedAt
   await session.save()
 
-  // Drop a question that was asked but never answered
+  // Make the skipped questions final (score 0), then drop any question that was never attempted
+  await VivaQuestion.updateMany(
+    { session: session._id, skipped: true, answeredAt: null },
+    { $set: { scores: { ...ZERO_SCORES }, overall: 0, feedback: SKIPPED_FEEDBACK, answeredAt: completedAt } },
+  )
   await VivaQuestion.deleteMany({ session: session._id, answeredAt: null })
 
   res.json({ success: true, session })

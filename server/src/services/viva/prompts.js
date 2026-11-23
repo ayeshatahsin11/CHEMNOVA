@@ -69,7 +69,7 @@ TASKS
 1. Evaluate the answer for scientific correctness. Give four scores from 0 to 10 (decimals allowed): accuracy (is the chemistry correct), understanding (grasp of the underlying concept), explanation (clarity and completeness), reasoning (logical steps and justification). An empty, off-topic or "I don't know" answer scores very low.
 2. Write "feedback" in 1-3 sentences: what was right, what was wrong or missing, and how to improve. If the answer was wrong or incomplete, state the correct idea.
 3. If the answer reveals a specific misconception, put it in "misconception" as one short sentence. Otherwise use null.
-${isLast ? '4. This was the last question, so do NOT include "next".' : `4. Ask question ${number + 1} of ${config.totalQuestions}. Make it a follow-up that builds on this answer if it exposed a gap or deserves a deeper probe ("isFollowUp": true). Otherwise move to a new subtopic ("isFollowUp": false).`}
+${isLast ? '4. No further question is needed right now, so do NOT include "next".' : `4. Ask question ${number + 1} of ${config.totalQuestions}. Make it a follow-up that builds on this answer if it exposed a gap or deserves a deeper probe ("isFollowUp": true). Otherwise move to a new subtopic ("isFollowUp": false).`}
 
 Return JSON in exactly this shape:
 {${evalShape}${isLast ? '' : `,${nextShape}`}}`
@@ -108,4 +108,18 @@ Rules:
 - "improvementAreas": 3 to 5 items, each specific and actionable and based on the log.
 - "revision": 3 to 5 items. Each "title" is a chemistry topic or skill to revise (NOT a book, website, paper or video). Each "why" links it to something in the log.
 - Do not invent any references.`
+}
+export function skipPrompt({ config, asked, history, number }) {
+  return `The student chose to skip question ${number - 1}. Do not evaluate anything.
+
+QUESTIONS ALREADY ASKED (never repeat or rephrase any of these):
+${asked.map((q, i) => `${i + 1}. ${q}`).join('\n')}
+
+EXAM SO FAR (answered questions only, oldest first):
+${JSON.stringify(history)}
+
+Ask question ${number} of ${config.totalQuestions}. Choose a different subtopic or angle from the skipped question, so the student gets a fresh start at a similar difficulty.
+
+Return JSON in exactly this shape:
+{"question":"the question text","topicTag":"2-4 word subtopic name","isFollowUp":false}`
 }

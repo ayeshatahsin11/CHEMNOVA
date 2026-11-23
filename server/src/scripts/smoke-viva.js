@@ -123,11 +123,12 @@ check('injection attempt scores low (AI-judged, may vary)', r.status === 200 && 
 console.log(`      feedback: ${show(e2?.feedback)}`)
 const q3 = r.data.next
 console.log(`      Q3: ${show(q3?.question)}`)
-
-// Answer 3 (last): skipped
+// Answer 3 (last): skipped. A skip never evaluates, and creates no new question here.
 r = await call('POST', `/viva/sessions/${sessionId}/answer`, { questionId: q3.id, skip: true }, tokenA)
-check('last answer (skipped) scores 0 and ends the exam', r.status === 200 && r.data.done === true && r.data.next === null && r.data.evaluated?.overall === 0)
+check('skipping the last question works and creates no new question', r.status === 200 && r.data.next === null && r.data.skippedQuestion?.skipped === true)
 
+r = await call('POST', `/viva/sessions/${sessionId}/answer`, { questionId: q3.id, skip: true }, tokenA)
+check('skipping the same question twice is rejected (409)', r.status === 409)
 // Final report
 r = await call('POST', `/viva/sessions/${sessionId}/finish`, null, tokenA)
 const rep = r.data.session?.report
@@ -149,6 +150,48 @@ r = await call('GET', '/viva/sessions', null, tokenA)
 check('history lists the finished session', r.status === 200 && r.data.sessions?.length === 1)
 
 // Guest limits
+// Skip a question, then come back to it later
+{
+  r = await call('POST', '/viva/sessions', { ...config, totalQuestions: 3 }, tokenA)
+  const id = r.data.session?.id
+  const k1 = r.data.question
+
+  r = await call('POST', `/viva/sessions/${id}/answer`, { questionId: k1.id, skip: true }, tokenA)
+  check(
+    'skipping a middle question returns the next question',
+    r.status === 200 && !!r.data.next?.question && r.data.skippedQuestion?.skipped === true && !r.data.skippedQuestion?.answeredAt,
+  )
+  const k2 = r.data.next
+
+  r = await call(
+    'POST',
+    `/viva/sessions/${id}/answer`,
+    { questionId: k2.id, answer: 'I am not fully sure, but I think it depends on the reaction conditions.' },
+    tokenA,
+  )
+  check('answering the newest question still creates the next one', r.status === 200 && !!r.data.next?.question)
+  const k3 = r.data.next
+
+  r = await call('POST', `/viva/sessions/${id}/answer`, { questionId: k3.id, skip: true }, tokenA)
+  check('skipping the last question creates no new question', r.status === 200 && r.data.next === null)
+
+  r = await call(
+    'POST',
+    `/viva/sessions/${id}/answer`,
+    { questionId: k1.id, answer: 'A reaction mechanism shows how bonds break and form step by step.' },
+    tokenA,
+  )
+  check(
+    'a skipped question can be answered later, without creating a new question',
+    r.status === 200 && r.data.next === null && r.data.evaluated?.skipped === false && !!r.data.evaluated?.answeredAt,
+  )
+
+  r = await call('GET', `/viva/sessions/${id}`, null, tokenA)
+  check('the session still has exactly 3 questions', r.data.questions?.length === 3)
+
+  r = await call('POST', `/viva/sessions/${id}/finish`, null, tokenA)
+  check('finishing counts the never-answered skipped question as 0', r.status === 200 && r.data.session?.report?.skipped === 1)
+}
 r = await call('POST', '/auth/guest')
 const tokenG = r.data.token
 guestId = r.data.user?.id

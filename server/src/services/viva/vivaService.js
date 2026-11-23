@@ -6,6 +6,7 @@ import {
   openingPrompt,
   turnPrompt,
   replacementPrompt,
+  skipPrompt,
   reportPrompt,
 } from './prompts.js'
 
@@ -98,6 +99,18 @@ export async function generateOpeningQuestion(config) {
     ...AI,
   })
   return out.data
+}
+
+// Used when the student skips: no evaluation, just a fresh next question
+export async function generateNextAfterSkip({ config, answered, asked, number }) {
+  const out = await askAIJSON({
+    system: examinerSystem(config),
+    prompt: skipPrompt({ config, asked, history: compactHistory(answered), number }),
+    schema: nextSchema,
+    maxTokens: 1500,
+    ...AI,
+  })
+  return ensureFresh({ ...out.data, isFollowUp: false }, asked, config)
 }
 
 function compactHistory(answered) {
