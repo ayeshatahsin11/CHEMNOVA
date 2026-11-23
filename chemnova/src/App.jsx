@@ -5,11 +5,16 @@ import ProtectedRoute from './routes/ProtectedRoute'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Dashboard from './pages/Dashboard'
+import Viva from './pages/Viva'
+import VivaSession from './pages/VivaSession'
 import AppLayout from './components/layout/AppLayout'
 import AmbientBackground from './components/ui/AmbientBackground'
 import ModulePlaceholder from './components/ui/ModulePlaceholder'
 import { navItems } from './lib/navigation'
-import Dashboard from './pages/Dashboard'
+
+// Modules that already have a real page
+const built = ['/dashboard', '/viva']
 
 function NotFound() {
   return (
@@ -39,9 +44,11 @@ export default function App() {
 
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
-                              <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/viva" element={<Viva />} />
+                <Route path="/viva/:id" element={<VivaSession />} />
                 {navItems
-                  .filter((item) => item.to !== '/dashboard')
+                  .filter((item) => !built.includes(item.to))
                   .map((item) => (
                     <Route key={item.to} path={item.to} element={<ModulePlaceholder item={item} />} />
                   ))}
