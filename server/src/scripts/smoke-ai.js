@@ -20,7 +20,7 @@ console.log('')
 
 try {
   // 1. Plain text
-  const a = await timed(() => askAI({ prompt: 'Reply with exactly one word: ready', maxTokens: 200 }))
+  const a = await timed(() => askAI({ prompt: 'Reply with exactly one word: ready', maxTokens: 800 }))
   check('plain text reply', a.result.text.length > 0, `(${a.result.provider}, ${a.ms}ms) -> "${a.result.text.slice(0, 40)}"`)
 
   // 2. JSON checked against a schema

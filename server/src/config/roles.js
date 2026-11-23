@@ -17,6 +17,7 @@ export const GUEST_LIMITS = {
   companionMessagesPerDay: 5,
   assessmentMaxQuestions: 5,
   vivaSessions: 1,
+  vivaMaxQuestions: 5,
   savesHistory: false,
   researchStudio: false,
 }
