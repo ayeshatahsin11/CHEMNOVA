@@ -6,11 +6,12 @@ export default function ChoiceCard({
   description,
   badge,
   disabled = false,
+  multi = false,
 }) {
   return (
     <button
       type="button"
-      role="radio"
+      role={multi ? 'checkbox' : 'radio'}
       aria-checked={active}
       disabled={disabled}
       onClick={onClick}
