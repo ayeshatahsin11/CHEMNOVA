@@ -8,13 +8,16 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Viva from './pages/Viva'
 import VivaSession from './pages/VivaSession'
+import Assessments from './pages/Assessments'
+import AssessmentDetail from './pages/AssessmentDetail'
+import AssessmentAttempt from './pages/AssessmentAttempt'
 import AppLayout from './components/layout/AppLayout'
 import AmbientBackground from './components/ui/AmbientBackground'
 import ModulePlaceholder from './components/ui/ModulePlaceholder'
 import { navItems } from './lib/navigation'
 
 // Modules that already have a real page
-const built = ['/dashboard', '/viva']
+const built = ['/dashboard', '/viva', '/assessments']
 
 function NotFound() {
   return (
@@ -47,6 +50,9 @@ export default function App() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/viva" element={<Viva />} />
                 <Route path="/viva/:id" element={<VivaSession />} />
+                <Route path="/assessments" element={<Assessments />} />
+                <Route path="/assessments/:id" element={<AssessmentDetail />} />
+                <Route path="/assessments/attempt/:id" element={<AssessmentAttempt />} />
                 {navItems
                   .filter((item) => !built.includes(item.to))
                   .map((item) => (
