@@ -16,6 +16,7 @@ export const GUEST_TTL_HOURS = 24
 export const GUEST_LIMITS = {
   companionMessagesPerDay: 5,
   assessmentMaxQuestions: 5,
+  assessments: 3,
   vivaSessions: 1,
   vivaMaxQuestions: 5,
   savesHistory: false,

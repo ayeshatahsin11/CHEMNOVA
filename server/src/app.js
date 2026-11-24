@@ -8,6 +8,7 @@ import { apiLimiter } from './middleware/rateLimit.js'
 import { notFound, errorHandler } from './middleware/errorHandler.js'
 import authRoutes from './routes/auth.routes.js'
 import vivaRoutes from './routes/viva.routes.js'
+import { assessmentRouter, attemptRouter } from './routes/assessment.routes.js'
 
 const app = express()
 
@@ -32,6 +33,8 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes)
 app.use('/api/viva', vivaRoutes)
+app.use('/api/assessments', assessmentRouter)
+app.use('/api/attempts', attemptRouter)
 
 // More feature routes get mounted here in the next steps
 
