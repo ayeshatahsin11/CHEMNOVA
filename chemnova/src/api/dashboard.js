@@ -1,37 +1,24 @@
-/*
- * TEMPORARY STUB, no backend yet.
- * fetchDashboard() returns an EMPTY dashboard, which is what a brand-new account sees.
- * In Phase 3 it becomes: return (await api.get('/analytics/dashboard')).data
- * The data shape below is what the real API will return.
- *
- * buildSampleDashboard() only powers the "Preview with sample data" toggle.
- */
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+import api, { getErrorMessage } from './client'
 
-const starterRecommendations = [
-  { id: 's1', icon: 'viva', title: 'Take your first viva', reason: 'A short session shows where you stand.', to: '/viva' },
-  { id: 's2', icon: 'assessment', title: 'Try a quick test', reason: 'Build a 10-question test on what you are studying.', to: '/assessments' },
-  { id: 's3', icon: 'companion', title: 'Ask the AI Companion', reason: 'Get any concept explained at your level.', to: '/companion' },
-  { id: 's4', icon: 'game', title: 'Play a daily challenge', reason: 'A quick game to warm up.', to: '/fun-zone' },
-]
-
-const emptyDashboard = {
-  stats: { vivas: 0, assessments: 0, research: 0, streak: 0 },
-  mastery: null,
-  activity: [],
-  subjects: [],
-  strong: [],
-  weak: [],
-  recent: [],
-  recommendations: starterRecommendations,
-  earned: [],
-}
-
+// Reads your real vivas and assessments. The browser's time zone makes the streak and the daily chart
+// line up with your own calendar days.
 export async function fetchDashboard() {
-  await wait(600)
-  return emptyDashboard
+  let tz = 'UTC'
+  try {
+    tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+  } catch {
+    // keep UTC
+  }
+
+  try {
+    const { data } = await api.get('/analytics/dashboard', { params: { tz } })
+    return data.dashboard
+  } catch (err) {
+    throw new Error(getErrorMessage(err))
+  }
 }
 
+// Only powers the "Preview with sample data" toggle. It never touches real data.
 export function buildSampleDashboard() {
   const DAY = 86400000
   const now = Date.now()
@@ -76,7 +63,7 @@ export function buildSampleDashboard() {
     recommendations: [
       { id: 'p1', icon: 'assessment', title: 'Revise chemical kinetics', reason: 'Your lowest topic at 46%. Try a focused test.', to: '/assessments' },
       { id: 'p2', icon: 'viva', title: 'Viva on NMR interpretation', reason: 'A conversation can expose the gaps behind 52%.', to: '/viva' },
-      { id: 'p3', icon: 'game', title: 'Protect your 5-day streak', reason: "Today's challenge takes about 3 minutes.", to: '/fun-zone' },
+      { id: 'p3', icon: 'assessment', title: 'Protect your 5-day streak', reason: 'A quick test today keeps it going.', to: '/assessments' },
     ],
     earned: ['first-viva', 'first-test', 'streak-3', 'researcher'],
   }

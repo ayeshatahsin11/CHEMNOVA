@@ -1,4 +1,5 @@
-import { History, Inbox, Mic, ClipboardCheck } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { History, Inbox, Mic, ClipboardCheck, ArrowRight } from 'lucide-react'
 import SpotlightCard from '../ui/SpotlightCard'
 import EmptyState from '../ui/EmptyState'
 import PanelHeader from './PanelHeader'
@@ -15,6 +16,42 @@ function scoreClass(score) {
   return 'bg-red-500/15 text-red-500'
 }
 
+function Row({ item }) {
+  const t = types[item.type]
+  const rowClass = 'flex items-center gap-4 rounded-xl px-2 py-3.5'
+
+  const content = (
+    <>
+      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${t.gradient}`}>
+        <t.icon size={18} className="text-[#04121c]" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{item.title}</p>
+        <p className="text-xs text-muted">
+          {t.label} · {item.subject} · {timeAgo(item.date)}
+        </p>
+      </div>
+      <span className={`rounded-full px-2.5 py-1 font-mono text-xs font-semibold ${scoreClass(item.score)}`}>
+        {item.score}%
+      </span>
+      {item.to && (
+        <ArrowRight
+          size={15}
+          className="shrink-0 text-muted transition-transform duration-300 group-hover/row:translate-x-1 group-hover/row:text-accent"
+        />
+      )}
+    </>
+  )
+
+  if (!item.to) return <div className={rowClass}>{content}</div>
+
+  return (
+    <Link to={item.to} className={`${rowClass} group/row transition hover:bg-surface-2/60`}>
+      {content}
+    </Link>
+  )
+}
+
 export default function RecentActivity({ items }) {
   return (
     <SpotlightCard className="h-full p-6">
@@ -29,25 +66,11 @@ export default function RecentActivity({ items }) {
         />
       ) : (
         <ul className="mt-4 divide-y divide-border">
-          {items.map((item) => {
-            const t = types[item.type]
-            return (
-              <li key={item.id} className="flex items-center gap-4 py-3.5">
-                <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${t.gradient}`}>
-                  <t.icon size={18} className="text-[#04121c]" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{item.title}</p>
-                  <p className="text-xs text-muted">
-                    {t.label} · {item.subject} · {timeAgo(item.date)}
-                  </p>
-                </div>
-                <span className={`rounded-full px-2.5 py-1 font-mono text-xs font-semibold ${scoreClass(item.score)}`}>
-                  {item.score}%
-                </span>
-              </li>
-            )
-          })}
+          {items.map((item) => (
+            <li key={item.id}>
+              <Row item={item} />
+            </li>
+          ))}
         </ul>
       )}
     </SpotlightCard>
