@@ -15,6 +15,7 @@ export const GUEST_TTL_HOURS = 24
 // Used by feature controllers later. Change a number here and it applies everywhere.
 export const GUEST_LIMITS = {
   companionMessagesPerDay: 5,
+  companionConversations: 3,
   assessmentMaxQuestions: 5,
   assessments: 3,
   vivaSessions: 1,
