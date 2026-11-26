@@ -12,6 +12,7 @@ import FormField from '../components/auth/FormField'
 import FormAlert from '../components/auth/FormAlert'
 import ChoiceCard from '../components/viva/ChoiceCard'
 import SessionHistory from '../components/viva/SessionHistory'
+import { canRecognize } from '../lib/speech'
 
 const levelHints = {
   School: 'Up to grade 12',
@@ -35,7 +36,7 @@ function Section({ id, label, hint, radio = false, children }) {
 function SetupForm({ options, user }) {
   const navigate = useNavigate()
   const { limits } = options
-
+  const voiceSupported = canRecognize()
   const [form, setForm] = useState({
     subject: options.subjects[0],
     topic: '',
@@ -208,13 +209,14 @@ function SetupForm({ options, user }) {
             title="Type"
             description="Write your answers."
           />
-          <ChoiceCard
-            active={false}
-            disabled
+                  <ChoiceCard
+            active={form.inputMode === 'voice'}
+            onClick={() => set('inputMode', 'voice')}
+            disabled={!voiceSupported}
             icon={Mic}
             title="Speak"
-            badge="Coming soon"
-            description="Answer out loud and hear the examiner."
+            badge={voiceSupported ? undefined : 'Not supported in this browser'}
+            description="Hear the examiner and answer out loud. You can edit what was heard before you send it."
           />
         </div>
       </Section>

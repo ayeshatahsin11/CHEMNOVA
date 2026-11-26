@@ -14,6 +14,7 @@ import FeedbackCard from '../components/viva/FeedbackCard'
 import QuestionNav from '../components/viva/QuestionNav'
 import ThinkingIndicator from '../components/viva/ThinkingIndicator'
 import VivaReport from '../components/viva/VivaReport'
+import VivaVoice from '../components/viva/VivaVoice'
 
 const block = 'animate-pulse rounded-2xl bg-surface-2/60'
 const badge = 'rounded-full border border-border bg-surface-2/70 px-3 py-1 text-xs'
@@ -294,12 +295,13 @@ function SessionView({ id }) {
   } else if (lastResult) {
     view = (
       <motion.div key={`feedback-${lastResult.id}`} {...enter}>
-        <FeedbackCard
+           <FeedbackCard
           question={lastResult}
           action={feedbackAction}
           label={feedbackLabel}
           finishing={finishing}
           onAction={onFeedbackAction}
+          voice={session.inputMode === 'voice'}
         />
       </motion.div>
     )
@@ -337,7 +339,16 @@ function SessionView({ id }) {
             <p className="mt-3 text-lg leading-relaxed font-medium">{viewQ.question}</p>
           </div>
         </div>
-
+        {session.inputMode === 'voice' && (
+          <VivaVoice
+            questionId={viewQ.id}
+            questionText={viewQ.question}
+            answer={answer}
+            onChange={setAnswer}
+            maxChars={MAX_ANSWER_CHARS}
+            disabled={busy}
+          />
+        )}
         <div className="mt-6">
           <textarea
             autoFocus
