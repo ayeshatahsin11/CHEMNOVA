@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { askAI, askAIJSON } from '../ai/aiService.js'
 import { companionSystem } from './prompts.js'
 import { applyChecks } from './calc.js'
+import { cleanMath } from './cleanMath.js'
 
 const solverSchema = z.object({
   reply: z
@@ -12,7 +13,7 @@ const solverSchema = z.object({
   checks: z.array(z.unknown()).max(20).catch([]),
 })
 
-const clip = (text) => String(text ?? '').trim().slice(0, 8000)
+const clip = (text) => cleanMath(String(text ?? '').trim()).slice(0, 8000)
 
 /**
  * Writes the Companion's answer.
