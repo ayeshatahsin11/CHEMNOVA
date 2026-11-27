@@ -58,7 +58,7 @@ export default function AppLayout() {
         <Topbar onMenu={() => setOpen(true)} />
         <main className="px-4 py-8 sm:px-8">
           <motion.div
-            key={location.pathname}
+                        key={location.pathname.startsWith('/companion') ? '/companion' : location.pathname}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}

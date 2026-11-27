@@ -15,9 +15,10 @@ import AppLayout from './components/layout/AppLayout'
 import AmbientBackground from './components/ui/AmbientBackground'
 import ModulePlaceholder from './components/ui/ModulePlaceholder'
 import { navItems } from './lib/navigation'
+import Companion from './pages/Companion'
 
 // Modules that already have a real page
-const built = ['/dashboard', '/viva', '/assessments']
+const built = ['/dashboard', '/viva', '/assessments', '/companion']
 
 function NotFound() {
   return (
@@ -53,6 +54,7 @@ export default function App() {
                 <Route path="/assessments" element={<Assessments />} />
                 <Route path="/assessments/:id" element={<AssessmentDetail />} />
                 <Route path="/assessments/attempt/:id" element={<AssessmentAttempt />} />
+                                <Route path="/companion/:id?" element={<Companion />} />
                 {navItems
                   .filter((item) => !built.includes(item.to))
                   .map((item) => (
