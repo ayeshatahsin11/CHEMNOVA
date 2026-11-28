@@ -36,6 +36,7 @@ const userSchema = new mongoose.Schema(
     // Only guests get this. MongoDB deletes the document when this date passes.
     expiresAt: { type: Date },
     lastLoginAt: { type: Date },
+        showOnLeaderboard: { type: Boolean, default: true },
   },
   { timestamps: true },
 )

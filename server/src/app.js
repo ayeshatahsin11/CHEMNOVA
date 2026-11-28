@@ -11,6 +11,7 @@ import vivaRoutes from './routes/viva.routes.js'
 import { assessmentRouter, attemptRouter } from './routes/assessment.routes.js'
 import analyticsRoutes from './routes/analytics.routes.js'
 import companionRoutes from './routes/companion.routes.js'
+import gamesRoutes from './routes/games.routes.js'
 
 const app = express()
 
@@ -39,7 +40,7 @@ app.use('/api/assessments', assessmentRouter)
 app.use('/api/attempts', attemptRouter)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/companion', companionRoutes)
-
+app.use('/api/games', gamesRoutes)
 
 // More feature routes get mounted here in the next steps
 
