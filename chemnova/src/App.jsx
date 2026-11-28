@@ -16,9 +16,12 @@ import AmbientBackground from './components/ui/AmbientBackground'
 import ModulePlaceholder from './components/ui/ModulePlaceholder'
 import { navItems } from './lib/navigation'
 import Companion from './pages/Companion'
+import FunZone from './pages/FunZone'
+import GameIntro from './pages/GameIntro'
+import GameRound from './pages/GameRound'
 
 // Modules that already have a real page
-const built = ['/dashboard', '/viva', '/assessments', '/companion']
+const built = ['/dashboard', '/viva', '/assessments', '/companion', '/fun-zone']
 
 function NotFound() {
   return (
@@ -55,6 +58,9 @@ export default function App() {
                 <Route path="/assessments/:id" element={<AssessmentDetail />} />
                 <Route path="/assessments/attempt/:id" element={<AssessmentAttempt />} />
                                 <Route path="/companion/:id?" element={<Companion />} />
+                                                <Route path="/fun-zone" element={<FunZone />} />
+                <Route path="/fun-zone/play/:game" element={<GameIntro />} />
+                <Route path="/fun-zone/round/:id" element={<GameRound />} />
                 {navItems
                   .filter((item) => !built.includes(item.to))
                   .map((item) => (
