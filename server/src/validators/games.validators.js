@@ -25,3 +25,7 @@ export const leaderboardQuerySchema = z.object({
   game: z.enum(GAME_IDS, 'Unknown game'),
   period: z.enum(['week', 'all']).default('week'),
 })
+export const checkSchema = z.object({
+  questionId: z.string().min(1),
+  choice: z.number().int().min(0).max(3),
+})

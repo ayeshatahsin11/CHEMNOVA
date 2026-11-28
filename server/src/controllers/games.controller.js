@@ -22,8 +22,29 @@ const sanitize = (q) => ({
   prompt: q.prompt,
   options: q.options,
   tag: q.tag,
+  answered: q.choice !== null && q.choice !== undefined,
   ...(q.kind === 'mystery' && { clues: q.clues.slice(0, q.revealed), clueCount: q.clues.length }),
 })
+
+// Where an unfinished round stands, worked out from the answers locked in so far
+function standing(round) {
+  const locked = new Map(
+    round.questions.filter((q) => q.choice !== null && q.choice !== undefined).map((q) => [q.id, q.choice]),
+  )
+  const graded = gradeRound({ game: round.game, questions: round.questions, choices: locked })
+
+  let streak = 0
+  for (const r of graded.results) {
+    if (r.choice === null) continue
+    streak = r.correct ? streak + 1 : 0
+  }
+  return { locked, graded, streak }
+}
+
+function liveProgress(round) {
+  const { locked, graded, streak } = standing(round)
+  return { answered: locked.size, streak, score: graded.score }
+}
 
 const infoOf = (r) => ({
   id: r.id,
@@ -84,6 +105,7 @@ const resumeView = (round) => ({
   resumed: true,
   round: infoOf(round),
   questions: round.questions.map(sanitize),
+  progress: liveProgress(round),
 })
 
 // The daily challenge belongs to the player's own calendar day
@@ -222,7 +244,12 @@ export const startRound = asyncHandler(async (req, res) => {
 export const getRound = asyncHandler(async (req, res) => {
   const round = await findOwnedRound(req)
   if (round.status === 'finished') return res.json(finishedView(round))
-  res.json({ success: true, round: infoOf(round), questions: round.questions.map(sanitize) })
+   res.json({
+    success: true,
+    round: infoOf(round),
+    questions: round.questions.map(sanitize),
+    progress: liveProgress(round),
+  })
 })
 
 // POST /api/games/rounds/:id/reveal: show the next clue of a mystery puzzle
@@ -234,11 +261,12 @@ export const revealClue = asyncHandler(async (req, res) => {
 
   const q = round.questions.find((x) => x.id === questionId)
   if (!q || q.kind !== 'mystery') throw new ApiError(404, 'That puzzle was not found in this round')
+      if (q.choice !== null && q.choice !== undefined) throw new ApiError(409, 'You have already answered this puzzle')
   if (q.revealed >= q.clues.length) throw new ApiError(409, 'Every clue is already revealed')
 
   // Matching on the current count means a double click reveals one clue, not two
   const updated = await GameRound.findOneAndUpdate(
-    { _id: round._id, status: 'active', questions: { $elemMatch: { _id: q._id, revealed: q.revealed } } },
+    { _id: round._id, status: 'active', questions: { $elemMatch: { _id: q._id, revealed: q.revealed, choice: null } } },
     { $inc: { 'questions.$.revealed': 1 } },
     { new: true },
   )
@@ -254,6 +282,40 @@ export const revealClue = asyncHandler(async (req, res) => {
   })
 })
 
+// POST /api/games/rounds/:id/check: lock in an answer and get instant feedback (untimed games only)
+export const checkAnswer = asyncHandler(async (req, res) => {
+  const { questionId, choice } = req.validated.body
+  const round = await findOwnedRound(req)
+
+  if (round.status !== 'active') throw new ApiError(409, 'This round has already finished')
+  if (round.durationSec > 0) throw new ApiError(400, 'Answers in a timed round are checked when you finish')
+
+  const q = round.questions.find((x) => x.id === questionId)
+  if (!q) throw new ApiError(404, 'Question not found in this round')
+  if (choice >= q.options.length) throw new ApiError(400, 'That option does not exist')
+  if (q.choice !== null && q.choice !== undefined) throw new ApiError(409, 'That question was already answered')
+
+  // Only one request can lock an answer, so a double click cannot change it
+  const locked = await GameRound.findOneAndUpdate(
+    { _id: round._id, status: 'active', questions: { $elemMatch: { _id: q._id, choice: null } } },
+    { $set: { 'questions.$.choice': choice } },
+    { new: true },
+  )
+  if (!locked) throw new ApiError(409, 'That question was already answered')
+
+  const { graded, streak } = standing(locked)
+  const mine = graded.results[locked.questions.findIndex((x) => x.id === questionId)]
+
+  res.json({
+    success: true,
+    correct: mine.correct,
+    correctIndex: q.correctIndex,
+    explanation: q.explanation,
+    points: mine.points,
+    streak,
+    score: graded.score,
+  })
+})
 // POST /api/games/rounds/:id/submit: score the round (safe to call twice)
 export const submitRound = asyncHandler(async (req, res) => {
   const round = await findOwnedRound(req)
@@ -269,6 +331,10 @@ export const submitRound = asyncHandler(async (req, res) => {
   const limit = !timed ? Infinity : late ? 0 : Math.floor(elapsedMs / GAME_LIMITS.minMsPerAnswer)
 
   const choices = new Map(req.validated.body.answers.map((a) => [a.questionId, a.choice]))
+    // An answer that was checked during play is locked in and cannot be changed at the end
+  for (const q of round.questions) {
+    if (q.choice !== null && q.choice !== undefined) choices.set(q.id, q.choice)
+  }
   const graded = gradeRound({ game: round.game, questions: round.questions, choices, limit })
 
   const prior = await GameRound.findOne({ user: round.user, game: round.game, status: 'finished' })

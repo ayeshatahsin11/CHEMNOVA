@@ -8,6 +8,7 @@ import {
   answersSchema,
   revealSchema,
   leaderboardQuerySchema,
+  checkSchema,
 } from '../validators/games.validators.js'
 import {
   getOverview,
@@ -16,6 +17,7 @@ import {
   revealClue,
   submitRound,
   getLeaderboard,
+  checkAnswer
 } from '../controllers/games.controller.js'
 
 const router = Router()
@@ -28,5 +30,6 @@ router.get('/rounds/:id', getRound)
 router.post('/rounds/:id/submit', validate(answersSchema), submitRound)
 router.post('/rounds/:id/reveal', validate(revealSchema), revealClue)
 router.post('/:game/rounds', validate(gameParamSchema, 'params'), validate(startRoundSchema), startRound)
+router.post('/rounds/:id/check', validate(checkSchema), checkAnswer)
 
 export default router

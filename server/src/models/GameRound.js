@@ -12,6 +12,7 @@ const questionSchema = new mongoose.Schema({
   tag: { type: String, default: '', maxlength: 40 },
   clues: { type: [String], default: undefined }, // mystery only
   revealed: { type: Number, min: 1 }, // mystery only: how many clues have been shown
+    choice: { type: Number, default: null }, // the player's locked answer (untimed games)
 })
 
 const resultSchema = new mongoose.Schema(

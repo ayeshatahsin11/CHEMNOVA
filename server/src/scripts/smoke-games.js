@@ -239,6 +239,64 @@ check('a puzzle has 5 clues in total', last.data.revealed === 5 && last.data.wor
 r = await call('POST', `/games/rounds/${againId}/reveal`, { questionId: again }, tokenA)
 check('a sixth clue is refused (409)', r.status === 409)
 
+// ----- Instant feedback (untimed games) -----
+{
+  r = await call('POST', '/games/molecule/rounds', {}, tokenA)
+  const id = r.data.round.id
+  const key = await keyOf(id)
+  check('questions start unanswered', r.data.questions.every((q) => q.answered === false))
+
+  r = await call('POST', `/games/rounds/${id}/check`, { questionId: key[0].id, choice: key[0].correct }, tokenA)
+  check(
+    'a right answer returns feedback, 15 points and a streak of 1',
+    r.status === 200 && r.data.correct === true && r.data.points === 15 && r.data.streak === 1 && r.data.score === 15 && !!r.data.explanation,
+  )
+
+  r = await call('POST', `/games/rounds/${id}/check`, { questionId: key[0].id, choice: key[0].correct }, tokenA)
+  check('a question cannot be answered twice (409)', r.status === 409)
+
+  r = await call('POST', `/games/rounds/${id}/check`, { questionId: key[1].id, choice: (key[1].correct + 1) % key[1].size }, tokenA)
+  check(
+    'a wrong answer shows the right one and resets the streak',
+    r.status === 200 && r.data.correct === false && r.data.correctIndex === key[1].correct && r.data.points === 0 && r.data.streak === 0,
+  )
+
+  r = await call('POST', `/games/rounds/${id}/check`, { questionId: 'nope', choice: 0 }, tokenA)
+  check('checking an unknown question is rejected (404)', r.status === 404)
+  r = await call('POST', `/games/rounds/${id}/check`, { questionId: key[2].id, choice: 7 }, tokenA)
+  check('an out-of-range choice is rejected (400)', r.status === 400)
+  r = await call('POST', `/games/rounds/${id}/check`, { questionId: key[2].id, choice: 0 }, tokenB)
+  check('another player cannot check answers in this round (404)', r.status === 404)
+
+  r = await call('GET', `/games/rounds/${id}`, null, tokenA)
+  check(
+    'resuming remembers answered questions, the streak and the score',
+    r.data.questions[0].answered === true &&
+      r.data.questions[1].answered === true &&
+      r.data.questions[2].answered === false &&
+      r.data.progress?.answered === 2 &&
+      r.data.progress?.score === 15 &&
+      r.data.progress?.streak === 0,
+  )
+
+  r = await call('POST', `/games/rounds/${id}/submit`, { answers: allRight(key) }, tokenA)
+  check('a checked answer cannot be changed when finishing (score 210)', r.status === 200 && r.data.round?.score === 210, `(score ${r.data.round?.score})`)
+
+  r = await call('POST', '/games/battle/rounds', {}, tokenA)
+  const battleKey = await keyOf(r.data.round.id)
+  r = await call('POST', `/games/rounds/${r.data.round.id}/check`, { questionId: battleKey[0].id, choice: 0 }, tokenA)
+  check('timed rounds are not checked answer by answer (400)', r.status === 400)
+
+  r = await call('POST', '/games/mystery/rounds', {}, tokenA)
+  const mysteryRound = r.data.round.id
+  const mysteryKey = await keyOf(mysteryRound)
+  const puzzle = r.data.questions[0].id
+  r = await call('POST', `/games/rounds/${mysteryRound}/check`, { questionId: puzzle, choice: mysteryKey[0].correct }, tokenA)
+  check('a mystery answer scores by the clues shown (100 with one clue)', r.data.points === 100)
+  r = await call('POST', `/games/rounds/${mysteryRound}/reveal`, { questionId: puzzle }, tokenA)
+  check('no more clues after answering (409)', r.status === 409)
+}
+
 // ----- Daily Challenge -----
 r = await call('POST', '/games/daily/rounds', { tz }, tokenA)
 check('the daily challenge has 5 questions', r.status === 201 && r.data.questions?.length === 5)
