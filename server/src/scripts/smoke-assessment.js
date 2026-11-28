@@ -6,7 +6,7 @@ import Assessment from '../models/Assessment.js'
 import AssessmentAttempt from '../models/AssessmentAttempt.js'
 import { safeEvaluate, parseNumber, numericMatches } from '../services/assessment/numeric.js'
 import { gradeObjective } from '../services/assessment/grading.js'
-
+import { waitForServer } from './waitForServer.js'
 const BASE = `http://127.0.0.1:${env.port}/api`
 
 async function call(method, path, body, token) {
@@ -28,7 +28,7 @@ const check = (label, pass, extra = '') =>
 const show = (s) => (s ?? '').toString().replace(/\s+/g, ' ').slice(0, 100)
 
 await connectDB()
-
+await waitForServer()
 // ---------- Part 1: grading logic (no AI, no server) ----------
 console.log('Part 1: numeric and grading logic\n')
 

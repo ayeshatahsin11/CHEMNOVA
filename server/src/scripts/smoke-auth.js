@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 import { env } from '../config/env.js'
 import { connectDB } from '../config/db.js'
 import User from '../models/User.js'
-
+import { waitForServer } from './waitForServer.js'
 const BASE = `http://127.0.0.1:${env.port}/api`
 
 async function call(method, path, body, token) {
@@ -21,7 +21,7 @@ async function call(method, path, body, token) {
 const check = (label, pass) => console.log(`${pass ? 'PASS' : 'FAIL'}  ${label}`)
 
 await connectDB()
-
+await waitForServer()
 const email = 'smoke.auth@chemnova.dev'
 const sneaky = 'admin.try@chemnova.dev'
 await User.deleteMany({ email: { $in: [email, sneaky] } })

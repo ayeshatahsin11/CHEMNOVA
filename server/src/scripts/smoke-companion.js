@@ -4,7 +4,7 @@ import { connectDB } from '../config/db.js'
 import User from '../models/User.js'
 import AIConversation from '../models/AIConversation.js'
 import { applyChecks } from '../services/companion/calc.js'
-
+import { waitForServer } from './waitForServer.js'
 const BASE = `http://127.0.0.1:${env.port}/api`
 
 async function call(method, path, body, token) {
@@ -60,7 +60,7 @@ check('an answer with no calculations has status none', a.content === 'Just an e
 console.log('\nPart 2: the API (this makes 2 real AI calls and can take a minute or two)\n')
 
 await connectDB()
-
+await waitForServer()
 const emails = ['smoke.companion.a@chemnova.dev', 'smoke.companion.b@chemnova.dev']
 let guestId = null
 

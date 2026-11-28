@@ -10,7 +10,7 @@ import { GAMES, GAME_IDS } from '../config/games.js'
 import { createRng, hashSeed, randomSeed } from '../services/games/rng.js'
 import { generateQuestions } from '../services/games/generators.js'
 import { gradeRound, maxScoreFor, mysteryPoints } from '../services/games/scoring.js'
-
+import { waitForServer } from './waitForServer.js'
 const BASE = `http://127.0.0.1:${env.port}/api`
 
 async function call(method, path, body, token) {
@@ -51,8 +51,10 @@ function problems(game, questions) {
   const prompts = new Set()
   for (const q of questions) {
     if (!q.prompt || !q.explanation) issues.push('a question has no text or explanation')
-    if (prompts.has(q.prompt)) issues.push(`duplicate question: ${q.prompt}`)
-    prompts.add(q.prompt)
+      // Every mystery puzzle asks "Which compound am I?", so those are told apart by their answer instead
+    const identity = q.kind === 'mystery' ? q.options[q.correctIndex] : q.prompt
+    if (prompts.has(identity)) issues.push(`duplicate question: ${identity}`)
+    prompts.add(identity)
     if (![2, 4].includes(q.options.length) || !unique(q.options)) issues.push(`bad options: ${q.prompt}`)
     if (!(q.correctIndex >= 0 && q.correctIndex < q.options.length)) issues.push(`bad answer index: ${q.prompt}`)
     if (q.kind === 'mystery' && (q.clues?.length !== 5 || q.revealed !== 1)) issues.push('bad mystery clues')
@@ -112,7 +114,7 @@ check('a limit counts only the first questions', gradeRound({ game: 'element_mat
 console.log('\nPart 2: the API\n')
 
 await connectDB()
-
+await waitForServer()
 const emails = ['smoke.games.a@chemnova.dev', 'smoke.games.b@chemnova.dev']
 let guestId = null
 

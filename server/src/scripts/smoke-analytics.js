@@ -6,6 +6,7 @@ import VivaSession from '../models/VivaSession.js'
 import Assessment from '../models/Assessment.js'
 import AssessmentAttempt from '../models/AssessmentAttempt.js'
 import { shiftDay, lastDays, currentStreak, longestStreak } from '../services/analytics/dateUtils.js'
+import { waitForServer } from './waitForServer.js'
 
 const BASE = `http://127.0.0.1:${env.port}/api`
 
@@ -40,7 +41,7 @@ check('longest streak', longestStreak(['2026-11-01', '2026-11-02', '2026-11-03',
 console.log('\nPart 2: the API\n')
 
 await connectDB()
-
+await waitForServer()
 const email = 'smoke.analytics@chemnova.dev'
 let guestId = null
 

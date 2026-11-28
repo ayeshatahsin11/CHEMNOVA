@@ -4,7 +4,7 @@ import { connectDB } from '../config/db.js'
 import User from '../models/User.js'
 import VivaSession from '../models/VivaSession.js'
 import VivaQuestion from '../models/VivaQuestion.js'
-
+import { waitForServer } from './waitForServer.js'
 const BASE = `http://127.0.0.1:${env.port}/api`
 
 async function call(method, path, body, token) {
@@ -27,7 +27,7 @@ const inRange = (n, lo, hi) => typeof n === 'number' && n >= lo && n <= hi
 const show = (s) => (s ?? '').toString().replace(/\s+/g, ' ').slice(0, 110)
 
 await connectDB()
-
+await waitForServer()
 const emails = ['smoke.viva.a@chemnova.dev', 'smoke.viva.b@chemnova.dev']
 let guestId = null
 

@@ -3,9 +3,10 @@ import { z } from 'zod'
 import { connectDB } from '../config/db.js'
 import AICache from '../models/AICache.js'
 import { askAI, askAIJSON, getProviderStatus } from '../services/ai/aiService.js'
+import { waitForServer } from './waitForServer.js'
 
 await connectDB()
-
+await waitForServer()
 console.log('\nProviders:')
 getProviderStatus().forEach((p) => console.log(`  ${p.name.padEnd(11)} ${p.model || '-'}  [${p.state}]`))
 
